@@ -1,0 +1,36 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <profiles>
+        <profile>
+            <id>default</id>
+            <repositories>
+                <repository>
+                    <id>central</id>
+                    <url>https://repo.maven.apache.org/maven2</url>
+                </repository>
+                <repository>
+                    <id>apache.snapshots</id>
+                    <url>https://repository.apache.org/snapshots</url>
+                </repository>
+                <repository>
+                    <id>github</id>
+                    <url>https://maven.pkg.github.com/danielproyectos9/quarkus-repository-lib</url>
+                </repository>
+            </repositories>
+        </profile>
+    </profiles>
+    <activeProfiles>
+        <activeProfile>default</activeProfile>
+    </activeProfiles>
+    <localRepository>${user.home}/.m2/repository</localRepository>
+    <servers>
+        <!-- Configuración para el repositorio privado de GitHub -->
+        <server>
+            <id>github</id>
+            <username>${USER_GITHUB}</username>
+            <password>${TOKEN_GITHUB}</password>
+        </server>
+    </servers>
+    <!-- Otras configuraciones pueden seguir aquí -->
+</settings>

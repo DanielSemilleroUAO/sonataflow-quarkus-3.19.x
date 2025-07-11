@@ -143,14 +143,18 @@
     </profiles>
 
     <repositories>
-    <!-- useful to resolve parent pom when it is a SNAPSHOT -->
-    <repository>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-      <id>apache.snapshots</id>
-      <name>Apache Snapshot Repository</name>
-      <url>https://repository.apache.org/snapshots</url>
-    </repository>
-  </repositories>
+        <!-- useful to resolve parent pom when it is a SNAPSHOT -->
+        <repository>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <id>apache.snapshots</id>
+            <name>Apache Snapshot Repository</name>
+            <url>https://repository.apache.org/snapshots</url>
+        </repository>
+        <!-- <repository>
+            <id>github</id>
+            <url>https://maven.pkg.github.com/danielproyectos9/quarkus-repository-lib</url>
+        </repository> -->
+    </repositories>
 </project>
