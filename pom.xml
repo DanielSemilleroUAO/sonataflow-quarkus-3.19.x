@@ -20,7 +20,6 @@
         <kogito.bom.group-id>org.kie.kogito</kogito.bom.group-id>
         <kogito.bom.artifact-id>kogito-bom</kogito.bom.artifact-id>
         <kogito.bom.version>10.2.0</kogito.bom.version>
-        <quarkus.config-tracking.enabled>true</quarkus.config-tracking.enabled>
     </properties>
 
     <dependencyManagement>
@@ -69,16 +68,6 @@
                 <version>${quarkus.platform.version}</version>
                 <extensions>true</extensions>
                 <executions>
-                    <execution>
-                        <id>track-prod-config-changes</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>track-config-changes</goal>
-                        </goals>
-                        <configuration>
-                            <dumpCurrentWhenRecordedUnavailable>true</dumpCurrentWhenRecordedUnavailable>
-                        </configuration>
-                    </execution>
                     <execution>
                         <goals>
                             <goal>build</goal>
