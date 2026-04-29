@@ -17,14 +17,20 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v6
 
-      # Cache del repositorio Maven (~5-8 min ahorrados en builds posteriores)
-      - name: 📦 Cache Maven
+      # Cache ampliado: Maven deps + GraalVM + build artifacts (Opción A)
+      # Maven Build Cache nativo 3.9+ (Opción B en el comando compile)
+      - name: 📦 Cache Maven + GraalVM + Build artifacts
         uses: actions/cache@v5
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-arm64-maven-${{ hashFiles('**/pom.xml') }}
+          path: |
+            ~/.m2/repository
+            ~/.gradle
+            ~/.native-build-tools
+            target/
+            .quarkus/
+          key: ${{ runner.os }}-arm64-build-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
-            ${{ runner.os }}-arm64-maven-
+            ${{ runner.os }}-arm64-build-
 
       - name: ☕ Setup GraalVM 21 (ARM64)
         uses: graalvm/setup-graalvm@v1
@@ -56,6 +62,8 @@ jobs:
             -DskipTests \
             -DskipITs=true \
             -Dmaven.test.skip=true \
+            -Dmaven.build.cache.enabled=true \
+            -Dmaven.build.cache.skipClean=true \
             --no-transfer-progress \
             -Dmaven.compiler.fork=true
 
@@ -69,6 +77,28 @@ jobs:
           echo "✅ Tiempo compilación nativa: ${NATIVE_DURATION}s ($(( NATIVE_DURATION / 60 ))m $(( NATIVE_DURATION % 60 ))s)"
           echo "⏱️  Tiempo total del job:      ${TOTAL_DURATION}s ($(( TOTAL_DURATION / 60 ))m $(( TOTAL_DURATION % 60 ))s)"
           echo "==========================================="
+
+      - name: 💾 Info del caché utilizado
+        if: always()
+        run: |
+          echo "=== Optimizaciones aplicadas ==="
+          echo "✅ GitHub Cache (Opción A):"
+          echo "   • Maven repository: ~/.m2/repository"
+          echo "   • GraalVM cache: ~/.native-build-tools"
+          echo "   • Build artifacts: target/ y .quarkus/"
+          echo ""
+          echo "✅ Maven Build Cache nativo (Maven 3.9+):"
+          echo "   • Cachea outputs de compilación"
+          echo "   • Detecta cambios incrementales"
+          echo ""
+          echo "Impacto esperado:"
+          echo "   • Build 1 (sin caché): ~7.5 min"
+          echo "   • Build 2+ (con caché): ~2-3 min (-70%)"
+          if [ -d "$HOME/.m2/repository" ]; then
+            echo ""
+            echo "Tamaño actual de caché Maven:"
+            du -sh "$HOME/.m2/repository" 2>/dev/null || echo "En construcción..."
+          fi
 
       - name: 📊 Info del binario generado
         if: success()
@@ -105,5 +135,10 @@ jobs:
           name: native-arm64-binary
           path: target/*-runner
           retention-days: 1
+
+
+
+
+
 
 
