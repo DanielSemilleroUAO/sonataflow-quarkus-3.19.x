@@ -1,0 +1,106 @@
+name: 🧪 Native ARM64 Build Benchmark
+
+on:
+  workflow_dispatch:  # Solo manual para la prueba
+  push:
+    branches: [ main ]
+
+jobs:
+  native-arm64:
+    name: Native Build (ubuntu-24.04-arm)
+    runs-on: ubuntu-24.04-arm  # GitHub-hosted ARM64 runner (Graviton)
+
+    steps:
+      - name: ⏱️ Inicio del benchmark
+        run: echo "BUILD_START=$(date +%s)" >> $GITHUB_ENV
+
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      # Cache del repositorio Maven (~5-8 min ahorrados en builds posteriores)
+      - name: 📦 Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-arm64-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-arm64-maven-
+
+      - name: ☕ Setup GraalVM 21 (ARM64)
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔍 Verificar entorno ARM64
+        run: |
+          echo "=== Arquitectura ==="
+          uname -m
+          echo "=== Java ==="
+          java -version
+          echo "=== GraalVM native-image ==="
+          native-image --version
+          echo "=== CPUs disponibles ==="
+          nproc
+          echo "=== Memoria disponible ==="
+          free -h
+
+      - name: ⏱️ Inicio compilación nativa
+        run: echo "NATIVE_START=$(date +%s)" >> $GITHUB_ENV
+
+      - name: 🔨 Compilar en modo nativo ARM64
+        run: |
+          ./mvnw package -Pnative \
+            -Dquarkus.native.container-build=false \
+            -DskipTests \
+            --no-transfer-progress \
+            -Dmaven.compiler.fork=true
+
+      - name: ⏱️ Calcular tiempo de compilación nativa
+        if: always()
+        run: |
+          NATIVE_END=$(date +%s)
+          NATIVE_DURATION=$((NATIVE_END - NATIVE_START))
+          TOTAL_DURATION=$((NATIVE_END - BUILD_START))
+          echo "==========================================="
+          echo "✅ Tiempo compilación nativa: ${NATIVE_DURATION}s ($(( NATIVE_DURATION / 60 ))m $(( NATIVE_DURATION % 60 ))s)"
+          echo "⏱️  Tiempo total del job:      ${TOTAL_DURATION}s ($(( TOTAL_DURATION / 60 ))m $(( TOTAL_DURATION % 60 ))s)"
+          echo "==========================================="
+
+      - name: 📊 Info del binario generado
+        if: success()
+        run: |
+          echo "=== Tamaño del binario nativo ==="
+          ls -lh target/*-runner
+          echo "=== Tipo de binario ==="
+          file target/*-runner
+
+      - name: 🚀 Test rápido del binario (arranque)
+        if: success()
+        run: |
+          echo "=== Iniciando binario y midiendo tiempo de arranque ==="
+          START=$(date +%s%3N)
+          ./target/*-runner &
+          PID=$!
+          
+          # Esperar que levante (max 30s)
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/q/health/ready 2>/dev/null; then
+              END=$(date +%s%3N)
+              echo "✅ Arranque en: $((END - START))ms"
+              break
+            fi
+            sleep 1
+          done
+          
+          kill $PID 2>/dev/null || true
+
+      - name: 📤 Subir binario como artefacto
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-arm64-binary
+          path: target/*-runner
+          retention-days: 1
+
