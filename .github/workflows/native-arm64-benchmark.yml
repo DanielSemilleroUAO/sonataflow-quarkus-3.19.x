@@ -54,6 +54,8 @@ jobs:
           ./mvnw package -Pnative \
             -Dquarkus.native.container-build=false \
             -DskipTests \
+            -DskipITs=true \
+            -Dmaven.test.skip=true \
             --no-transfer-progress \
             -Dmaven.compiler.fork=true
 
@@ -103,4 +105,5 @@ jobs:
           name: native-arm64-binary
           path: target/*-runner
           retention-days: 1
+
 
